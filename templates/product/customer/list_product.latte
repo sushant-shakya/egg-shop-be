@@ -1,0 +1,78 @@
+{include '../../common/headers.latte'}
+<body>
+
+<div class="glide">
+    <div class="glide__track" data-glide-el="track">
+        <ul class="glide__slides">
+            <li class="glide__slide">
+                <img src="/assets/Asset%201.png" alt="Image 1">
+            </li>
+            <li class="glide__slide">
+                <img src="/assets/Asset%202.png" alt="Image 2">
+            </li>
+            <li class="glide__slide">
+                <img src="/assets/Asset%203.png" alt="Image 3">
+            </li>
+        </ul>
+    </div>
+
+    <div class="glide__arrows" data-glide-el="controls">
+        <button class="glide__arrow glide__arrow--left" data-glide-dir="<">‹</button>
+        <button class="glide__arrow glide__arrow--right" data-glide-dir=">">›</button>
+    </div>
+</div>
+<section class="featured-saman" >
+
+    <h2>Products</h2>
+    <div class="saman-grid">
+
+        <div class="search-bar">
+            <form method="post">
+                <input type="text" name="search" placeholder="Search eggs">
+                <button>Search</button>
+            </form>
+        </div>
+        <div class="row">
+
+            {foreach $productDetails as $productDetail}
+                <div class="saman">
+                    <a href="/books/detail?id={$productDetail->id}">
+                        <figure>
+                        <img alt={$productDetail->title} src="{$productDetail->imageUrl}">
+                        </figure>
+                        <h3>{$productDetail->title}</h3>
+                    <p class="item-price">Rs.{$productDetail->price}</p>
+                    </a>
+                    <div class="item-button">
+                        <form action="/cart" method="post">
+                            <input type="hidden" value="{$productDetail->id}" name="productDetailId">
+                            <div class="quanbtn">
+                            <label for="">Quantity</label>
+                            <input type="number" value="1" name="quantity" min="1" max="{$productDetail->quantity}">
+                            <b>{$productDetail->quantity} left in stock</b>
+                            </div>
+                            <div class="cartbtn1">
+                            <button class="cart-button1">
+                                <img src="/assets/cart.png" alt="Cart" class="cart-icon1 dashboard-icon">
+                            </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {/foreach}
+        </div>
+    </div>
+</section>
+
+<form>
+    <ul class="pagination">
+        {for $i = 1; $i <= round($total / $limit); $i++}
+            <li class="page-item {if $start === $i}active{/if}"><a class="page-link"
+                                                                   href="?start={$i}&limit={$limit}&search={$search}">{$i}</a>
+            </li>
+        {/for}
+    </ul>
+</form>
+</body>
+{include '../../common/footers.latte'}
+</html>

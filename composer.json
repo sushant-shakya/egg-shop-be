@@ -1,0 +1,25 @@
+{
+  "name": "bookshop/bookshop",
+  "type": "project",
+  "require": {
+    "latte/latte": "^3.0",
+    "ext-mysqli": "*",
+    "vlucas/phpdotenv": "^5.6",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  },
+  "scripts": {
+    "serve": "php -S 127.0.0.1:9900 -t .",
+    "analyze": "vendor/bin/phpstan analyze src && vendor/bin/phpstan analyze index.php"
+  },
+  "config": {
+    "process-timeout":0
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1"
+  }
+}

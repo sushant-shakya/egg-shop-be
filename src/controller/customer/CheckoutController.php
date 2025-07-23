@@ -79,7 +79,6 @@ class CheckoutController extends BaseController
         }
     }
 
-
     public function callKhalti($paymentId): void
     {
         $curl = curl_init();
@@ -151,7 +150,7 @@ class CheckoutController extends BaseController
             CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_POSTFIELDS => json_encode($request),
             CURLOPT_HTTPHEADER => array(
-                'Authorization: Key 859abd9677844443beea1cde201adaa7',
+                'Authorization: Key 827c7b83575542b59dd35b943df6b415',
                 'Content-Type: application/json',
             ),
         ));
@@ -164,7 +163,6 @@ class CheckoutController extends BaseController
 
         curl_close($curl);
     }
-
     public function updateProductInventory(array $products, float|int $grandTotal): int
     {
         foreach ($products as $product) {

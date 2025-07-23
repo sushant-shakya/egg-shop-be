@@ -29,11 +29,11 @@ class ProductController extends BaseController
             $countQuery = "";
 
             if (strlen($search) > 0) {
-                $query = "SELECT * FROM product_details WHERE title LIKE '%$search%' LIMIT " . $limit . " OFFSET " . $offset;
-                $countQuery = "SELECT COUNT(*) as count FROM product_details WHERE title LIKE '%$search%'";
+                $query = "SELECT * FROM product_details WHERE is_active=1 AND title LIKE '%$search%' LIMIT " . $limit . " OFFSET " . $offset;
+                $countQuery = "SELECT COUNT(*) as count FROM product_details WHERE title LIKE '%$search%' AND is_active=1";
             } else {
-                $query = "SELECT * FROM product_details LIMIT " . $limit . " OFFSET " . $offset;
-                $countQuery = "SELECT COUNT(*) as count FROM product_details";
+                $query = "SELECT * FROM product_details WHERE is_active=1 LIMIT " . $limit . " OFFSET " . $offset;
+                $countQuery = "SELECT COUNT(*) as count FROM product_details WHERE is_active=1";
             }
 
             $productDetails = $this->database->queryAll($query, new ProductDetailMapper());
@@ -56,7 +56,7 @@ class ProductController extends BaseController
     function getProductDetails(int $productDetailId): void
     {
         try {
-            $query = "SELECT * FROM product_details WHERE id=" . $productDetailId;
+            $query = "SELECT * FROM product_details WHERE id= $productDetailId AND is_active=1";
             $bookDetail = $this->database->queryOne($query, new ProductDetailMapper());
 
             $params = [
@@ -74,7 +74,7 @@ class ProductController extends BaseController
         try {
 
             $result = $this->database->query(
-                "UPDATE product_details SET title='%s', image_url='%s', description='%s', distributor='%s', price=%d where id=%d",
+                "UPDATE product_details SET title='%s', image_url='%s', description='%s', distributor='%s', price=%d where id=%d AND is_active=1",
                 [
                     $_POST['title'] ,
                     $_POST['imageUrl'],
@@ -98,7 +98,10 @@ class ProductController extends BaseController
         try {
             error_log("Deleting product with ID: " . $bookId); // Debugging
 
-            $result = $this->database->query("DELETE FROM product_details WHERE id=%d", [$bookId]);
+            $result = $this->database->query("UPDATE product_details SET is_active=0 where id=%d AND is_active=1",
+                [
+                    $bookId
+                ]);
 
             if ($result) {
                 error_log("Product deleted successfully");
@@ -161,7 +164,7 @@ class ProductController extends BaseController
        (select count(*) from products where product_detail_id =" . $productDetailId . " and status = 'DAMAGED') as damaged,
        (select count(*) from products where product_detail_id = " . $productDetailId . " and status = 'AVAILABLE') as available
         from product_details
-        where id =" . $productDetailId;
+        where id = $productDetailId AND is_active=1";
 
             $statistics = $this->database->queryOne(
                 $sql,
@@ -215,10 +218,10 @@ class ProductController extends BaseController
     function getProductByProductDetailId(int $productDetailId, int $start = 1, int $limit = 5): void
     {
         $offset = $this->offset($start, $limit);
-        $query = "SELECT * FROM products WHERE product_detail_id=" . $productDetailId . " LIMIT " . $limit . " OFFSET " . $offset;
+        $query = "SELECT * FROM products WHERE is_active=1 AND product_detail_id= $productDetailId LIMIT " .$limit . " OFFSET " . $offset;
         $products = $this->database->queryAll($query, new ProductMapper());
-        $productDetail = $this->database->queryOne("SELECT * FROM product_details WHERE id=" . $productDetailId, new ProductDetailMapper());
-        $total = $this->database->count("SELECT COUNT(*) as count FROM products");
+        $productDetail = $this->database->queryOne("SELECT * FROM product_details WHERE id= $productDetailId AND is_active=1", new ProductDetailMapper());
+        $total = $this->database->count("SELECT COUNT(*) as count FROM products WHERE is_active=1");
 
         $params = [
             'products' => $products,
@@ -234,9 +237,9 @@ class ProductController extends BaseController
     function getProductByProductDetailIdAndId(int $productDetailId, int $bookId, int $start = 1, int $limit = 5): void
     {
         $offset = $this->offset($start, $limit);
-        $bookDetail = $this->database->queryOne("SELECT * FROM product_details WHERE id=" . $productDetailId, new ProductDetailMapper());
-        $products = $this->database->queryAll("select * from products where product_detail_id=" . $productDetailId . " and id=" . $bookId, new ProductMapper());
-        $total = $this->database->count("SELECT COUNT(*) as count FROM products");
+        $bookDetail = $this->database->queryOne("SELECT * FROM product_details WHERE id= $productDetailId AND is_active=1", new ProductDetailMapper());
+        $products = $this->database->queryAll("select * from products where product_detail_id= $productDetailId AND id= $bookId AND is_active=1", new ProductMapper());
+        $total = $this->database->count("SELECT COUNT(*) as count FROM products WHERE is_active=1");
         $params = [
             'books' => $products,
             'bookDetail' => $bookDetail,
@@ -254,8 +257,8 @@ class ProductController extends BaseController
         }
         
         $offset = $this->offset($start, $limit);
-        $sql = "SELECT b.id,  bd.title, b.status, b.created_date, b.updated_date FROM products b INNER JOIN product_details bd ON b.product_detail_id=bd.id";
-        $countSql = "SELECT COUNT(*) as count FROM products";
+        $sql = "SELECT b.id,  bd.title, b.status, b.created_date, b.updated_date FROM products b INNER JOIN product_details bd ON b.product_detail_id=bd.id WHERE b.is_active=1 AND bd.is_active=1";
+        $countSql = "SELECT COUNT(*) as count FROM products where is_active=1";
         $isFilterPresent = false;
 
         $isproductDetailIdFilterPresent = false;
@@ -278,8 +281,8 @@ class ProductController extends BaseController
         }
 
         if ($isFilterPresent) {
-            $sql .= " WHERE ";
-            $countSql .= " WHERE ";
+            $sql .= " AND ";
+            $countSql .= " AND ";
 
             $filterStart = false;
 
@@ -320,7 +323,7 @@ class ProductController extends BaseController
         $sql .= " LIMIT " . $limit . " OFFSET " . $offset;
 
         $products = $this->database->queryAll($sql, new ProductReportMapper());
-        $bookDetails = $this->database->queryAll("SELECT * FROM product_details", new ProductDetailMapper());
+        $bookDetails = $this->database->queryAll("SELECT * FROM product_details WHERE is_active=1", new ProductDetailMapper());
         $total = $this->database->count($countSql);
         $params = [
             'products' => $products,
@@ -336,10 +339,10 @@ class ProductController extends BaseController
     function getProductDetailInventory(int $start = 1, int $limit = 5): void
     {
         $offset = $this->offset($start, $limit);
-        $query = "SELECT b.id,  bd.title, b.status, b.created_date, b.updated_date FROM products b INNER JOIN product_details bd ON b.product_detail_id=bd.id LIMIT " . $limit . " OFFSET " . $offset;
+        $query = "SELECT b.id,  bd.title, b.status, b.created_date, b.updated_date FROM products b INNER JOIN product_details bd ON b.product_detail_id=bd.id WHERE b.is_active=1 AND bd.is_active=1 LIMIT $limit OFFSET $offset ";
         $products = $this->database->queryAll($query, new ProductReportMapper());
-        $bookDetails = $this->database->queryAll("SELECT * FROM product_details", new ProductDetailMapper());
-        $total = $this->database->count("SELECT COUNT(*) as count FROM products");
+        $bookDetails = $this->database->queryAll("SELECT * FROM product_details where is_active=1", new ProductDetailMapper());
+        $total = $this->database->count("SELECT COUNT(*) as count FROM products where is_active=1");
         $params = [
             'products' => $products,
             'bookDetails' => $bookDetails,
@@ -354,7 +357,7 @@ class ProductController extends BaseController
     function updateProductDetailInventoryPage(int $bookId): void
     {
 
-        $sql = "select b.id,  bd.title, b.status, b.created_date, b.updated_date from products b INNER JOIN product_details bd ON b.product_detail_id=bd.id where b.id=" . $bookId;
+        $sql = "select b.id,  bd.title, b.status, b.created_date, b.updated_date from products b INNER JOIN product_details bd ON b.product_detail_id=bd.id where b.id= $bookId and b.is_active=1 AND bd.is_active=1";
         $bookDetail = $this->database->queryOne($sql, new ProductReportMapper());
         $bookStatusList = ["AVAILABLE", "SOLD", "DAMAGED"];
         $params = [
@@ -366,7 +369,7 @@ class ProductController extends BaseController
 
     function updateProductDetailInventory(int $bookId): void
     {
-        $sql = "UPDATE products SET status='%s' WHERE id=%d";
+        $sql = "UPDATE products SET status='%s' WHERE id=%d and is_active=1";
         $result = $this->database->query($sql, [$_POST['status'], $bookId]);
         if ($result) {
             $this->redirect("product-details/inventory");
@@ -375,7 +378,7 @@ class ProductController extends BaseController
 
     function deleteProductDetailInventory(int $bookId, string $redirectUrl): void
     {
-        $sql = "DELETE FROM products WHERE id=%d";
+        $sql = "UPDATE products SET is_active=0 where id=%d AND is_active=1";
         $result = $this->database->query($sql, [$bookId]);
 
         if ($result) {

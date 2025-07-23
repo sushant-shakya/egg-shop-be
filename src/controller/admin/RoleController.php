@@ -21,7 +21,7 @@ class RoleController extends BaseController
     function getAllRoles(): void
     {
         try {
-            $query = "SELECT * FROM roles";
+            $query = "SELECT * FROM roles where is_active=1";
 
             $roles = $this->database->queryAll($query, new RoleMapper());
 
@@ -40,7 +40,7 @@ class RoleController extends BaseController
     {
         try {
 
-            $query = "SELECT * FROM roles WHERE id=" . $roleId;
+            $query = "SELECT * FROM roles WHERE id= $roleId AND is_active=1";
             $role = $this->database->queryOne($query, new RoleMapper());
 
             $params = [
@@ -64,7 +64,7 @@ class RoleController extends BaseController
             );
             $database = new Database();
             $result = $this->database->query(
-                "UPDATE roles SET name='%s' where id=%d",
+                "UPDATE roles SET name='%s' where id=%d and is_active=1",
                 [
                     $role->getName(),
                     $role->getId()
@@ -82,7 +82,7 @@ class RoleController extends BaseController
     function deleteRole(int $roleId): void
     {
         try {
-            $result = $this->database->query("DELETE FROM roles where id=%d", [$roleId]);
+            $result = $this->database->query("UPDATE roles SET is_active=0 where id=%d", [$roleId]);
             if ($result) {
                 $this->redirect("roles");
             }

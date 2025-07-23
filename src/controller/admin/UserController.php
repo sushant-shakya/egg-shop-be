@@ -23,11 +23,11 @@ class UserController extends BaseController
     {
 
         try {
-            $query = "SELECT u.id, u.first_name, u.last_name, u.email, u.address, u.contact_no, r.name AS role_id FROM users u JOIN roles r ON r.id=u.role_id";
-            $countQuery = "SELECT COUNT(*) AS count FROM users u";
+            $query = "SELECT u.id, u.first_name, u.last_name, u.email, u.address, u.contact_no, r.name AS role_id FROM users u JOIN roles r ON r.id=u.role_id WHERE u.is_active=1 AND r.is_active=1";
+            $countQuery = "SELECT COUNT(*) AS count FROM users u WHERE u.is_active=1";
 
             if (strlen($search) > 0) {
-                $searchQuery = " WHERE u.first_name LIKE '%$search%' OR u.last_name LIKE '%$search%'";
+                $searchQuery = " AND u.first_name LIKE '%$search%' OR u.last_name LIKE '%$search%'";
                 $query .= $searchQuery;
                 $countQuery .= $searchQuery;
             }
@@ -51,9 +51,9 @@ class UserController extends BaseController
 
     function getUser(int $userId): void
     {
-        $query = "SELECT * FROM users WHERE id=" . $userId;
+        $query = "SELECT * FROM users WHERE id= $userId AND is_active=1";
         $user = $this->database->queryOne($query, new UserMapper());
-        $roles = $this->database->queryAll("SELECT * FROM roles", new RoleMapper());
+        $roles = $this->database->queryAll("SELECT * FROM roles WHERE is_active=1", new RoleMapper());
 
         $params = [
             'user' => $user,
@@ -81,7 +81,7 @@ class UserController extends BaseController
             );
 
             $result = $this->database->query(
-                "UPDATE users SET first_name='%s', last_name='%s', email='%s', role_id=%d, address='%s', contact_no=%d where id=%d",
+                "UPDATE users SET first_name='%s', last_name='%s', email='%s', role_id=%d, address='%s', contact_no=%d where id=%d and is_active=1",
                 [
                     $user->getFirstName(),
                     $user->getLastName(),
@@ -105,7 +105,11 @@ class UserController extends BaseController
     {
         try {
 
-            $result = $this->database->query("DELETE FROM users where id=%d", [$userId]);
+            $result = $this->database->query("UPDATE users SET is_active=0 where id=%d AND is_active=1",
+              [
+                  $userId
+              ],
+            );
             if ($result) {
                 $this->redirect("users");
             }
@@ -117,7 +121,7 @@ class UserController extends BaseController
 
     function saveUserPage(): void
     {
-        $roles = $this->database->queryAll("SELECT * FROM roles", new RoleMapper());
+        $roles = $this->database->queryAll("SELECT * FROM roles WHERE is_active=1", new RoleMapper());
 
         $params = [
             'roles' => $roles
